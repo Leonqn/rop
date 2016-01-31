@@ -40,7 +40,7 @@ module Async =
     
     let retn = async.Return 
     
-    let map f x = async.Bind(x, fun x -> retn <| f x)
+    let map f x = async.Bind(x, f >> retn)
 
 module AsyncResult = 
 
