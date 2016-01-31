@@ -8,7 +8,8 @@ type Result<'TSuccess, 'TFailure> =
 module Result = 
     
     let retn = Success
-    
+    let fail = Failure
+
     let either successFunc failureFunc = 
         function 
         | Success s -> successFunc s
@@ -42,7 +43,8 @@ module Async =
 module AsyncResult = 
 
     let retn x = Async.retn <| Result.retn x
-    
+    let fail x = Async.retn <| Result.fail x
+
     let either successFunc failureFunc xAsyncResult = 
         async {
             let! xResult = xAsyncResult
