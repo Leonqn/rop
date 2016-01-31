@@ -4,8 +4,9 @@ module Rop
 type Result<'TSuccess, 'TFailure> = 
     | Success of 'TSuccess
     | Failure of 'TFailure
-    
+
 module Result = 
+    
     let retn = Success
     
     let either successFunc failureFunc = 
@@ -19,9 +20,7 @@ module Result =
     
     let getOrDefault f = either id f
     
-    let get xResult = getOrDefault (fun _ -> failwith "There is no value") xResult
-    
-    let biMap successFunc failureFunc = either (successFunc >> Success) (failureFunc >> Failure)
+    let biMap successFunc failFunc = either (successFunc >> Success) (failFunc >> Failure)
     
     let tee f x = 
         f x |> ignore
@@ -34,11 +33,11 @@ module Result =
    
 module Async = 
 
-    let bind f xAsync = async.Bind(xAsync, f)
+    let bind f x = async.Bind(x, f)
     
     let retn = async.Return 
     
-    let map f xAsync = async.Bind(xAsync, fun x -> retn <| f x)
+    let map f x = async.Bind(x, fun x -> retn <| f x)
 
 module AsyncResult = 
 
@@ -62,11 +61,34 @@ module AsyncResult =
     
     let biMap successFunc failFunc = Async.map <| Result.biMap successFunc failFunc
     
-    let tryCatch asyncF exnHandler xAsync = 
+    let tryCatch f exnHandler xAsync = 
         async { 
             try 
                 let! x = xAsync
-                let! res = asyncF x
+                let! res = f x
                 return Success res
             with ex -> return Failure <| exnHandler ex 
         }
+
+    let fromAsync xAsync =  Async.map Result.retn xAsync
+
+    type AsyncResultBuilder() = 
+        member __.Return value = retn value
+        
+        member __.ReturnFrom asyncResult = asyncResult
+        
+        member __.Zero () = retn ()
+        
+        member __.Delay generator = generator >> fromAsync
+            
+        member __.Bind(asyncResult, binder) = bind binder asyncResult
+            
+        member __.Bind(result, binder) = result |> Async.retn |> bind binder
+        
+        member __.TryWith(asyncResult, catchHandler) = retn <| async.TryWith(asyncResult, catchHandler)
+
+        member __.TryFinally(asyncResult, compensation) = retn <| async.TryFinally(asyncResult, compensation)
+        
+        member __.Using(resource : 'T when 'T :> System.IDisposable, binder) = retn <| async.Using(resource, binder)
+    
+    let asyncResult = AsyncResultBuilder()
