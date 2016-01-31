@@ -23,6 +23,8 @@ module Result =
     
     let biMap successFunc failFunc = either (successFunc >> Success) (failFunc >> Failure)
     
+    let mapFailure f x = biMap id f x
+    
     let tee f x = 
         f x |> ignore
         x
@@ -63,6 +65,8 @@ module AsyncResult =
     
     let biMap successFunc failFunc = Async.map <| Result.biMap successFunc failFunc
     
+    let mapFailure f x = biMap id f x
+
     let tryCatch f exnHandler xAsync = 
         async { 
             try 
