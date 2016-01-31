@@ -91,6 +91,6 @@ module AsyncResult =
 
         member __.TryFinally(asyncResult, compensation) = retn <| async.TryFinally(asyncResult, compensation)
         
-        member __.Using(resource : 'T when 'T :> System.IDisposable, binder) = retn <| async.Using(resource, binder)
+        member __.Using(resource, binder) = retn <| async.Using(resource, binder)
     
     let asyncResult = AsyncResultBuilder()
