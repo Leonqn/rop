@@ -80,23 +80,23 @@ module AsyncResult =
 
     let fromAsync xAsync =  Async.map Result.retn xAsync
 
-    type AsyncResultBuilder() = 
-        member __.Return value = retn value
+type ResultBuilder() = 
+    member __.Return value = AsyncResult.retn value
         
-        member __.ReturnFrom asyncResult = asyncResult
+    member __.ReturnFrom asyncResult = asyncResult
         
-        member __.Zero () = retn ()
+    member __.Zero () = AsyncResult.retn ()
         
-        member __.Delay generator = generator >> fromAsync
+    member __.Delay generator = generator >> AsyncResult.fromAsync
             
-        member __.Bind(asyncResult, binder) = bind binder asyncResult
+    member __.Bind(asyncResult, binder) = AsyncResult.bind binder asyncResult
             
-        member __.Bind(result, binder) = result |> Async.retn |> bind binder
+    member __.Bind(result, binder) = result |> Async.retn |> AsyncResult.bind binder
         
-        member __.TryWith(asyncResult, catchHandler) = retn <| async.TryWith(asyncResult, catchHandler)
+    member __.TryWith(asyncResult, catchHandler) = AsyncResult.retn <| async.TryWith(asyncResult, catchHandler)
 
-        member __.TryFinally(asyncResult, compensation) = retn <| async.TryFinally(asyncResult, compensation)
+    member __.TryFinally(asyncResult, compensation) = AsyncResult.retn <| async.TryFinally(asyncResult, compensation)
         
-        member __.Using(resource, binder) = retn <| async.Using(resource, binder)
+    member __.Using(resource, binder) = AsyncResult.retn <| async.Using(resource, binder)
     
-    let asyncResult = AsyncResultBuilder()
+let result = ResultBuilder()
