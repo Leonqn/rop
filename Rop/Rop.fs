@@ -1,84 +1,37 @@
 ﻿[<AutoOpen>]
 module Rop
-    
-type Result<'TSuccess, 'TFailure> = 
-    | Success of 'TSuccess
-    | Failure of 'TFailure
+
+open FSharp.Core
 
 type AsyncResult<'TSuccess, 'TFailure> = Async<Result<'TSuccess, 'TFailure>>
 
-module Result = 
-    
-    let retn = Success
-    let fail = Failure
-
-    let either successFunc failureFunc = 
-        function 
-        | Success s -> successFunc s
-        | Failure f -> failureFunc f
-    
-    let bind f = either f Failure
-    
-    let map f = either (f >> Success) Failure
-    
-    let getOrDefault f = either id f
-    
-    let biMap successFunc failFunc = either (successFunc >> Success) (failFunc >> Failure)
-    
-    let mapFailure f x = biMap id f x
-    
-    let tee f x = 
-        f x |> ignore
-        x
-    
-    let tryCatch f exnHandler x = 
-        try 
-            f x |> Success
-        with ex -> exnHandler ex |> Failure
    
 module Async = 
 
     let bind f x = async.Bind(x, f)
     
-    let retn = async.Return 
     
-    let map f x = async.Bind(x, f >> retn)
+    let map f x = async.Bind(x, f >> async.Return)
 
 module AsyncResult = 
-
-    let retn x = Async.retn <| Result.retn x
-    let fail x = Async.retn <| Result.fail x
+    
+    let retn x = Ok x |> async.Return
 
     let either successFunc failureFunc xAsyncResult = 
         async {
             let! xResult = xAsyncResult
             match xResult with
-            | Success s -> return! successFunc s
-            | Failure f -> return! failureFunc f
+            | Ok s -> return! successFunc s
+            | Error f -> return! failureFunc f
         }
 
-    let bind f = either f (Failure >> Async.retn)
-    let inline (>>=) x f = bind f x
+    let bind f = either f (Failure >> async.Return)
     
     let map f = Async.map <| Result.map f
-    let inline (<!>) x f = map f x
     
-    let getOrDefault f = Async.map <| Result.getOrDefault f
-    
-    let biMap successFunc failFunc = Async.map <| Result.biMap successFunc failFunc
-    
-    let mapFailure f x = biMap id f x
+    let mapError f x = Async.map (Result.mapError f) x
 
-    let tryCatch f exnHandler xAsync = 
-        async { 
-            try 
-                let! x = xAsync
-                let! res = f x
-                return Success res
-            with ex -> return Failure <| exnHandler ex 
-        }
-
-    let fromAsync xAsync =  Async.map Result.retn xAsync
+    let fromAsync xAsync =  Async.map Ok xAsync
 
 type ResultBuilder() = 
     member __.Return value = AsyncResult.retn value
@@ -91,7 +44,7 @@ type ResultBuilder() =
             
     member __.Bind(asyncResult, binder) = AsyncResult.bind binder asyncResult
             
-    member __.Bind(result, binder) = result |> Async.retn |> AsyncResult.bind binder
+    member __.Bind(result, binder) = result |> async.Return |> AsyncResult.bind binder
         
     member __.TryWith(asyncResult, catchHandler) = AsyncResult.retn <| async.TryWith(asyncResult, catchHandler)
 
