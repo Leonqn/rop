@@ -1,8 +1,6 @@
 ﻿[<AutoOpen>]
 module Rop
 
-open FSharp.Core
-
 module Async = 
 
     let bind f x = async.Bind(x, f)
@@ -27,7 +25,7 @@ module AsyncResult =
     
     let mapError f x = Async.map (Result.mapError f) x
 
-    let fromAsync xAsync =  Async.map Ok xAsync
+    let fromAsync xAsync = Async.map Ok xAsync
 
 type ResultBuilder() = 
     member __.Return value = AsyncResult.retn value
