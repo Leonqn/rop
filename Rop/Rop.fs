@@ -3,13 +3,9 @@ module Rop
 
 open FSharp.Core
 
-type AsyncResult<'TSuccess, 'TFailure> = Async<Result<'TSuccess, 'TFailure>>
-
-   
 module Async = 
 
     let bind f x = async.Bind(x, f)
-    
     
     let map f x = async.Bind(x, f >> async.Return)
 
