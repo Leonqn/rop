@@ -34,7 +34,7 @@ type ResultBuilder() =
         
     member __.Zero () = AsyncResult.retn ()
         
-    member __.Delay generator = generator >> AsyncResult.fromAsync
+    member __.Delay = async.Delay
             
     member __.Bind(asyncResult, binder) = AsyncResult.bind binder asyncResult
             
